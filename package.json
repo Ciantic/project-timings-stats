@@ -1,0 +1,23 @@
+{
+  "name": "example-bare",
+  "type": "module",
+  "scripts": {
+    "dev": "vinxi dev",
+    "build": "vinxi build",
+    "bundle": "vinxi build && deno bundle .output/server/index.mjs -o .output/bundle.mjs",
+    "start": "vinxi start"
+  },
+  "dependencies": {
+    "@solidjs/start": "^1.1.0",
+    "kysely": "^0.28.11",
+    "kysely-generic-sqlite": "^1.2.1",
+    "solid-js": "^1.9.5",
+    "vinxi": "^0.5.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
