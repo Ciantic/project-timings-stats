@@ -1,8 +1,9 @@
 // @refresh reload
 import { createHandler, StartServer } from "@solidjs/start/server";
 
-export default createHandler(() => (
-  <StartServer
+
+export default createHandler(() => {
+  return <StartServer
     document={({ assets, children, scripts }) => (
       <html lang="en">
         <head>
@@ -18,4 +19,4 @@ export default createHandler(() => (
       </html>
     )}
   />
-));
+});

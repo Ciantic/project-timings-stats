@@ -43,7 +43,7 @@ export async function getDailySummariesWithTotals(input: { from?: Date; to?: Dat
         totalsQuery.execute()
     ]);
     const end = performance.now();
-    console.log(`Queries took ${end - start} ms`);
+    // console.log(`Queries took ${end - start} ms`);
 
     // Create a map of summaries by day-project key
     const summariesMap = new Map(
@@ -61,4 +61,9 @@ export async function getDailySummariesWithTotals(input: { from?: Date; to?: Dat
             total: total.hours
         };
     });
+}
+
+export async function keepAlive() {
+    "use server";
+    return "OK";
 }
