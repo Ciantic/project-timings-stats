@@ -1,0 +1,17 @@
+.my-stats-table {
+    thead {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: var(--color-base-200);
+        font-size: 0.75rem;
+    }
+
+    tfoot {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        background: var(--color-base-200);
+        font-size: 0.75rem;
+    }
+}
