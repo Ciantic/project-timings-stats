@@ -1,20 +1,31 @@
 import { db } from './db.ts';
 
 
-export async function getDailySummariesWithTotals(input: { from: string; to: string, client?: string; project?: string }) {
+export async function getDailySummariesWithTotals(input: { from?: Date; to?: Date, client?: string; project?: string }) {
     "use server";
+
+    const from = input?.from?.toISOString().substring(0, 10);
+    let to = input?.to?.toISOString().substring(0, 10);
+
+    if (!from) {
+        return [];
+    }
+
+    if (!to) {
+        to = from;
+    }
 
     let summariesQuery = db
         .selectFrom('dailySummaries')
         .selectAll()
-        .where('day', '>=', input.from)
-        .where('day', '<=', input.to);
+        .where('day', '>=', from)
+        .where('day', '<=', to);
 
     let totalsQuery = db
         .selectFrom('dailyTotals')
         .selectAll()
-        .where('day', '>=', input.from)
-        .where('day', '<=', input.to);
+        .where('day', '>=', from)
+        .where('day', '<=', to);
 
     if (input.client) {
         summariesQuery = summariesQuery.where('client', 'like', `%${input.client}%`);
@@ -26,10 +37,13 @@ export async function getDailySummariesWithTotals(input: { from: string; to: str
         totalsQuery = totalsQuery.where('project', 'like', `%${input.project}%`);
     }
 
+    const start = performance.now();
     const [summaries, totals] = await Promise.all([
         summariesQuery.execute(),
         totalsQuery.execute()
     ]);
+    const end = performance.now();
+    console.log(`Queries took ${end - start} ms`);
 
     // Create a map of summaries by day-project key
     const summariesMap = new Map(

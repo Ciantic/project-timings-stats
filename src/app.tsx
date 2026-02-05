@@ -11,7 +11,7 @@ export default function App() {
         <div class="app-layout">
           <Nav />
           <main class="app-content">
-            <Suspense>{props.children}</Suspense>
+            <Suspense fallback={<div>App.tsx loading...</div>}>{props.children}</Suspense>
           </main>
         </div>
       )}

@@ -1,8 +1,18 @@
-import { For, createSignal, createMemo } from "solid-js";
+import { For, createSignal, createMemo, createResource } from "solid-js";
 import { getDailySummariesWithTotals } from "../server/api.ts";
 import { onMount } from "solid-js";
 import { createUrlSignal } from "../utils/createUrlSignal.ts";
 import "./StatsTable.css";
+import { parseDateRange } from "../utils/formatDate.ts";
+// @ts-types="solid-js"
+import { createComputed } from "solid-js";
+// @ts-types="solid-js"
+import { createEffect } from "solid-js";
+import { createAsync, query } from "@solidjs/router";
+// @ts-types="solid-js"
+import { Suspense } from "solid-js";
+import { NoHydration } from "solid-js/web";
+import { createDebouncedAsync } from "../utils/createDebouncedAsync.ts";
 
 interface TableRow {
   day: string;
@@ -17,23 +27,21 @@ function makeId(row: TableRow) {
   return `${row.day}-${row.project}-${row.client}`;
 }
 
-function debounceAsync<T extends (...args: unknown[]) => Promise<unknown>>(
-  fn: T,
-  delay: number,
-): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  return (...args: Parameters<T>) => {
+function debounce<T>(fn: (arg: T) => void, delay: number): (arg: T) => void {
+  let timeoutId: number | undefined;
+  return (arg: T) => {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     timeoutId = setTimeout(() => {
-      fn(...args);
+      fn(arg);
+      timeoutId = undefined;
     }, delay);
   };
 }
 
 export default function StatsTable() {
-  const [data, setData] = createSignal<TableRow[]>([]);
+  const [dayFilter, setDayFilter] = createUrlSignal("1 months", "day");
   const [clientFilter, setClientFilter] = createUrlSignal("", "client");
   const [projectFilter, setProjectFilter] = createUrlSignal("", "project");
   const [fxExpr, setFxExpr] = createUrlSignal("r(x*1.25*2,0)/2", "fx");
@@ -41,18 +49,17 @@ export default function StatsTable() {
     "x>0.01",
     "hoursFilter",
   );
+  const parsedDateRange = createMemo(() => parseDateRange(dayFilter()));
 
-  async function updateData() {
-    const data = await getDailySummariesWithTotals({
-      from: "2026-01-01",
-      to: "2026-01-31",
-      client: clientFilter() || undefined,
-      project: projectFilter() || undefined,
-    });
-    setData(data);
-  }
-
-  const debouncedUpdateData = debounceAsync(updateData, 150);
+  const [getData] = createDebouncedAsync(
+    [],
+    getDailySummariesWithTotals,
+    () => ({
+      ...parsedDateRange(),
+      client: clientFilter(),
+      project: projectFilter(),
+    }),
+  );
 
   const fxFunc = createMemo(() => (x: number) => {
     const r = (x: number, n = 1) => {
@@ -86,7 +93,7 @@ export default function StatsTable() {
   });
 
   const dataProcessed = createMemo(() => {
-    const rows = data()
+    const rows = getData()
       .map((row) => ({
         ...row,
         fx: fxFunc()(row.total),
@@ -128,10 +135,6 @@ export default function StatsTable() {
     };
   });
 
-  onMount(() => {
-    updateData();
-  });
-
   const [selectedRows, setSelectedRows] = createSignal<Set<string>>(new Set());
 
   const toggleRow = (id: string) => {
@@ -153,9 +156,9 @@ export default function StatsTable() {
   };
 
   const updateSummary = (id: string, summary: string) => {
-    setData((rows) =>
-      rows.map((row) => (makeId(row) === id ? { ...row, summary } : row)),
-    );
+    // setData((rows) =>
+    //   rows.map((row) => (makeId(row) === id ? { ...row, summary } : row)),
+    // );
   };
 
   return (
@@ -178,14 +181,23 @@ export default function StatsTable() {
               class="checkbox checkbox-primary checkbox-sm"
             />
           </th>
-          <th class="w-[100px]">Day</th>
+          <th class="w-[100px]">
+            <input
+              type="text"
+              value={dayFilter()}
+              onInput={(e) => {
+                setDayFilter(e.currentTarget.value);
+              }}
+              class="input input-ghost input-xs w-full mt-1 p-0"
+              placeholder="Days"
+            />
+          </th>
           <th class="w-[20%]">
             <input
               type="text"
               value={clientFilter()}
               onInput={(e) => {
                 setClientFilter(e.currentTarget.value);
-                debouncedUpdateData();
               }}
               class="input input-ghost input-xs w-full mt-1 p-0"
               placeholder="Client"
@@ -197,7 +209,6 @@ export default function StatsTable() {
               value={projectFilter()}
               onInput={(e) => {
                 setProjectFilter(e.currentTarget.value);
-                debouncedUpdateData();
               }}
               class="input input-ghost input-xs w-full mt-1 p-0"
               placeholder="Project"
