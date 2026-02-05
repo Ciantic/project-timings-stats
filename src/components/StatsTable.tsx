@@ -1,7 +1,7 @@
-import { For, createSignal } from "solid-js";
+import { For, createSignal, createMemo } from "solid-js";
 import { getDailySummariesWithTotals } from "../server/api.ts";
-import { useSearchParams } from "@solidjs/router";
 import { onMount } from "solid-js";
+import { createUrlSignal } from "../utils/createUrlSignal.ts";
 import "./StatsTable.css";
 
 interface TableRow {
@@ -10,6 +10,7 @@ interface TableRow {
     client: string;
     summary: string;
     total: number;
+    fx?: number | string;
 }
 
 function makeId(row: TableRow) {
@@ -31,17 +32,13 @@ function debounceAsync<T extends (...args: unknown[]) => Promise<unknown>>(
   };
 }
 
-function getParamAsString(value: string | string[] | undefined): string {
-  return Array.isArray(value) ? value[0] || "" : value || "";
-}
-
 export default function StatsTable() {
 
-  const [searchParams, setSearchParams] = useSearchParams();
-
   const [data, setData] = createSignal<TableRow[]>([]);
-  const [clientFilter, setClientFilter] = createSignal(getParamAsString(searchParams.client));
-  const [projectFilter, setProjectFilter] = createSignal(getParamAsString(searchParams.project));
+  const [clientFilter, setClientFilter] = createUrlSignal("", "client");
+  const [projectFilter, setProjectFilter] = createUrlSignal("", "project");
+  const [fxExpr, setFxExpr] = createUrlSignal("x", "fx");
+  const [hoursFilter, setHoursFilter] = createUrlSignal("", "hoursFilter");
 
   async function updateData() {
     const data = await getDailySummariesWithTotals({
@@ -53,7 +50,65 @@ export default function StatsTable() {
     setData(data);
   }
 
-  const debouncedUpdateData = debounceAsync(updateData, 300);
+  const debouncedUpdateData = debounceAsync(updateData, 150);
+
+  const fxFunc = createMemo(() => (x: number): number | string => {
+    if (fxExpr() === "") {
+      return x;
+    }
+    try {
+      return (
+        Math.round(
+          new Function("x", "return " + fxExpr())(x) * 100
+        ) / 100
+      );
+    } catch (e) {
+      return "Error";
+    }
+  });
+
+  const hoursFilterFunc = createMemo(() => (x: number): boolean | string => {
+    if (hoursFilter() === "") {
+      return true;
+    }
+    try {
+      return new Function("x", "return " + hoursFilter())(x);
+    } catch (e) {
+      return "Error";
+    }
+  });
+
+  const dataProcessed = createMemo(() => {
+    const rows = data()
+      .map((row) => ({
+        ...row,
+        fx: fxFunc()(row.total),
+      }))
+      .filter((row) => {
+        const hoursFilterResult = hoursFilterFunc()(row.total);
+        if (typeof hoursFilterResult === "boolean" && !hoursFilterResult) {
+          return false;
+        }
+        
+        const clientFilterVal = clientFilter().toLowerCase();
+        if (clientFilterVal && !row.client.toLowerCase().includes(clientFilterVal)) {
+          return false;
+        }
+        
+        const projectFilterVal = projectFilter().toLowerCase();
+        if (projectFilterVal && !row.project.toLowerCase().includes(projectFilterVal)) {
+          return false;
+        }
+        
+        return typeof hoursFilterResult === "boolean" ? hoursFilterResult : false;
+      });
+
+    return {
+      rows,
+      totalHours: rows.reduce((acc, row) => acc + row.total, 0),
+      totalFx: rows.reduce((acc, row) => acc + (typeof row.fx === "number" ? row.fx : 0), 0),
+    };
+  });
 
   onMount(() => {
     updateData();
@@ -72,10 +127,10 @@ export default function StatsTable() {
   };
 
   const toggleAll = () => {
-    if (selectedRows().size === data().length) {
+    if (selectedRows().size === dataProcessed().rows.length) {
       setSelectedRows(new Set<string>());
     } else {
-      setSelectedRows(new Set(data().map(makeId)));
+      setSelectedRows(new Set(dataProcessed().rows.map(makeId)));
     }
   };
 
@@ -93,9 +148,9 @@ export default function StatsTable() {
               <input
                 type="checkbox"
                 ref={(el) => {
-                  el.indeterminate = selectedRows().size > 0 && selectedRows().size < data().length;
+                  el.indeterminate = selectedRows().size > 0 && selectedRows().size < dataProcessed().rows.length;
                 }}
-                checked={selectedRows().size === data().length && data().length > 0}
+                checked={selectedRows().size === dataProcessed().rows.length && dataProcessed().rows.length > 0}
                 onChange={toggleAll}
                 class="checkbox checkbox-primary checkbox-sm"
               />
@@ -106,9 +161,7 @@ export default function StatsTable() {
                 type="text"
                 value={clientFilter()}
                 onInput={(e) => {
-                  const value = e.currentTarget.value;
-                  setClientFilter(value);
-                  setSearchParams({ client: value || undefined });
+                  setClientFilter(e.currentTarget.value);
                   debouncedUpdateData();
                 }}
                 class="input input-ghost input-xs w-full mt-1 p-0"
@@ -120,21 +173,40 @@ export default function StatsTable() {
                 type="text"
                 value={projectFilter()}
                 onInput={(e) => {
-                  const value = e.currentTarget.value;
-                  setProjectFilter(value);
-                  setSearchParams({ project: value || undefined });
+                  setProjectFilter(e.currentTarget.value);
                   debouncedUpdateData();
                 }}
                 class="input input-ghost input-xs w-full mt-1 p-0"
                 placeholder="Project"
               />
             </th>
-            <th class="w-[80px]">Total</th>
+            <th class="w-[80px]">
+              <input
+                type="text"
+                value={hoursFilter()}
+                onInput={(e) => {
+                  setHoursFilter(e.currentTarget.value);
+                }}
+                class="input input-ghost input-xs w-full mt-1 p-0"
+                placeholder="Hours"
+              />
+            </th>
+            <th class="w-[80px]">
+              <input
+                type="text"
+                value={fxExpr()}
+                onInput={(e) => {
+                  setFxExpr(e.currentTarget.value);
+                }}
+                class="input input-ghost input-xs w-full mt-1 p-0"
+                placeholder="Σ"
+              />
+            </th>
             <th>Summary</th>
           </tr>
         </thead>
         <tbody>
-          <For each={data()}>
+          <For each={dataProcessed().rows}>
             {(row) => (
               <tr class="hover">
                 <td>
@@ -149,6 +221,7 @@ export default function StatsTable() {
                 <td>{row.client}</td>
                 <td>{row.project}</td>
                 <td>{row.total.toFixed(2)}</td>
+                <td>{typeof row.fx === "number" ? row.fx.toFixed(2) : row.fx}</td>
                 <td>
                   <input
                     type="text"
@@ -166,7 +239,10 @@ export default function StatsTable() {
           <tr>
             <td colSpan={4}></td>
             <td class="">
-              {data().reduce((acc, row) => acc + row.total, 0).toFixed(2)}
+              {dataProcessed().totalHours.toFixed(2)}
+            </td>
+            <td class="">
+              {dataProcessed().totalFx.toFixed(2)}
             </td>
             <td></td>
           </tr>

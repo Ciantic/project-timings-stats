@@ -4,13 +4,14 @@
   "scripts": {
     "dev": "vinxi dev",
     "build": "vinxi build",
-    "bundle": "vinxi build && deno bundle .output/server/index.mjs -o .output/bundle.mjs",
+    "pack": "vinxi build && cd .output && deno bundle server/index.mjs -o bundle.mjs",
     "start": "vinxi start"
   },
   "dependencies": {
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.1.0",
     "daisyui": "^5.5.17",
+    "date-fns": "^4.1.0",
     "kysely": "^0.28.11",
     "kysely-generic-sqlite": "^1.2.1",
     "solid-js": "^1.9.5",
