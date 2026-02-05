@@ -1,18 +1,11 @@
-import { For, createSignal, createMemo, createResource } from "solid-js";
-import { getDailySummariesWithTotals } from "../server/api.ts";
-import { onMount } from "solid-js";
+import { For, createSignal, createMemo } from "solid-js";
+import { getDailySummariesWithTotals, keepAlive, updateSummary } from "../server/api.ts";
 import { createUrlSignal } from "../utils/createUrlSignal.ts";
-import "./StatsTable.css";
 import { parseDateRange } from "../utils/formatDate.ts";
-// @ts-types="solid-js"
-import { createComputed } from "solid-js";
-// @ts-types="solid-js"
-import { createEffect } from "solid-js";
-import { createAsync, query } from "@solidjs/router";
-// @ts-types="solid-js"
-import { Suspense } from "solid-js";
-import { NoHydration } from "solid-js/web";
 import { createDebouncedAsync } from "../utils/createDebouncedAsync.ts";
+import { debounce } from "../utils/debounce.ts";
+
+import "./StatsTable.css";
 
 interface TableRow {
   day: string;
@@ -27,18 +20,7 @@ function makeId(row: TableRow) {
   return `${row.day}-${row.project}-${row.client}`;
 }
 
-function debounce<T>(fn: (arg: T) => void, delay: number): (arg: T) => void {
-  let timeoutId: number | undefined;
-  return (arg: T) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    timeoutId = setTimeout(() => {
-      fn(arg);
-      timeoutId = undefined;
-    }, delay);
-  };
-}
+const updateSummaryDebounced = debounce(updateSummary, 150);
 
 export default function StatsTable() {
   const [dayFilter, setDayFilter] = createUrlSignal("1 months", "day");
@@ -93,6 +75,7 @@ export default function StatsTable() {
   });
 
   const dataProcessed = createMemo(() => {
+    console.log("Processing data with filters...");
     const rows = getData()
       .map((row) => ({
         ...row,
@@ -153,12 +136,6 @@ export default function StatsTable() {
     } else {
       setSelectedRows(new Set(dataProcessed().rows.map(makeId)));
     }
-  };
-
-  const updateSummary = (id: string, summary: string) => {
-    // setData((rows) =>
-    //   rows.map((row) => (makeId(row) === id ? { ...row, summary } : row)),
-    // );
   };
 
   return (
@@ -260,9 +237,17 @@ export default function StatsTable() {
                 <input
                   type="text"
                   value={row.summary}
-                  onInput={(e) =>
-                    updateSummary(makeId(row), e.currentTarget.value)
-                  }
+                  onInput={(e) => {
+                    e.preventDefault();
+                    const value = e.currentTarget.value;
+                    // keepAlive(); // Keep the server alive on user input
+                    updateSummaryDebounced({
+                      day: new Date(row.day + "T00:00:00"),
+                      client: row.client,
+                      project: row.project,
+                      summary: value,
+                    });
+                  }}
                   class="input input-ghost input-sm w-full"
                   // placeholder="Enter summary"
                 />

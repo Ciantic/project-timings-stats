@@ -1,5 +1,32 @@
 {
   "imports": {
     "@std/assert": "jsr:@std/assert@^1"
+  },
+  "permissions": {
+    "default": {
+      "read": [
+        "./_data",
+        "./.output",
+        "/tmp/timings-stats-keep-alive",
+        "/home/jarppa/.config/timings/timings.db"
+      ],
+      "write": [
+        "./_data",
+        "./.output",
+        "/tmp/timings-stats-keep-alive",
+        "/home/jarppa/.config/timings/timings.db"
+      ],
+      "env": [
+        "NITRO_*",
+        "_NITRO*",
+        "_APP",
+        "_APP*",
+        "PORT",
+        "HOST",
+        "TIMINGS_DB",
+        "DENO_TRACE_PERMISSIONS"
+      ],
+      "net": true
+    }
   }
 }

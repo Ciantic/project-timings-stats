@@ -1,30 +1,30 @@
-import { Kysely } from 'kysely';
-import { createNodeSqliteDialect } from './executor.ts';
+import { Kysely, Generated, SqliteDialect } from "kysely";
+import { createNodeSqliteDialect } from "./executor.ts";
 
 // Database table interfaces
 export interface ClientTable {
-  id: number;
+  id: Generated<bigint>;
   name: string;
 }
 
 export interface ProjectTable {
-  id: number;
+  id: Generated<bigint>;
   name: string;
   clientId: number;
 }
 
 export interface TimingTable {
-  id: number;
-  start: number;
-  end: number;
+  id: Generated<bigint>;
+  start: number; // Unix timestamp in milliseconds (INTEGER
+  end: number; // Unix timestamp in milliseconds (INTEGER )
   projectId: number;
 }
 
 export interface SummaryTable {
-  id: number;
-  archived: boolean;
-  start: number;
-  end: number;
+  id: Generated<bigint>;
+  archived: number;
+  start: number; // Unix timestamp in milliseconds (INTEGER
+  end: number; // Unix timestamp in milliseconds (INTEGER)
   text: string;
   projectId: number;
 }
@@ -56,7 +56,9 @@ export interface Database {
   dailyTotals: DailyTotalsView;
 }
 
+const TIMINGS_DB = Deno.env.get("TIMINGS_DB") || "./_data/timings.db";
+
 // Create and export the database instance
 export const db = new Kysely<Database>({
-  dialect: createNodeSqliteDialect('./_data/timings.db'),
+  dialect: createNodeSqliteDialect(TIMINGS_DB),
 });

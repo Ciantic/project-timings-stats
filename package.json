@@ -2,10 +2,8 @@
   "name": "example-bare",
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev",
     "build": "vinxi build",
-    "pack": "vinxi build && cd .output && deno bundle server/index.mjs -o bundle.mjs",
-    "start": "vinxi start"
+    "pack": "vinxi build && cd .output/server && deno bundle index.mjs -o bundle.mjs"
   },
   "dependencies": {
     "@solidjs/router": "^0.15.0",
