@@ -127,6 +127,10 @@ export function parseDateRange(range: string): { from: Date; to?: Date } | undef
             const unit = match[2];
             const to = new Date();
             const from = new Date(to);
+            to.setHours(23);
+            to.setMinutes(59);
+            to.setSeconds(59);
+            to.setMilliseconds(999);
             switch (unit) {
                 case "month":
                 case "months":

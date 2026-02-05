@@ -1,5 +1,8 @@
 #!/bin/bash -l
 
+# CD into the script directory
+cd "$(dirname "$0")" || exit
+
 # Manual step in KDE: Also disable "Allow this program to be grouped"... it still groups Google Chrome windows
 
 google-chrome-stable --new-window --app=http://localhost:3010/stats
