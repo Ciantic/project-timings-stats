@@ -19,9 +19,11 @@ if (typeof Deno !== "undefined") {
       const stat = Deno.statSync(KEEP_ALIVE_FILE);
       const lastModified = stat.mtime?.getTime() || 0;
       const timeSinceLastRequest = Date.now() - lastModified;
-      
+
       if (timeSinceLastRequest >= INACTIVITY_TIMEOUT) {
-        console.log(`[Auto-shutdown] No requests for ${timeSinceLastRequest}ms - shutting down...`);
+        console.log(
+          `[Auto-shutdown] No requests for ${timeSinceLastRequest}ms - shutting down...`,
+        );
         clearInterval(checkInterval);
         Deno.exit(0);
       }
