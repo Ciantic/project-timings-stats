@@ -7,3 +7,4 @@ export PORT=3010
 export HOST=localhost
 export TIMINGS_DB=~/.config/timings/timings.db
 deno --config deno.json -P .output/server/index.mjs
+# deno --config deno.json -P .output/server/bundle.mjs
