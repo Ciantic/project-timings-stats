@@ -60,14 +60,12 @@ function postTarBallPlugin(): PluginOption {
       // mk dist.deno
       Deno.mkdirSync("dist.deno", { recursive: true });
 
-      const command = new Deno.Command("tar", {
+      const result = new Deno.Command("tar", {
         args: ["-cf", "dist.deno/dist.tar", "-C", "dist", "."],
-      });
-
-      const result = command.outputSync();
+      }).outputSync();
 
       if (result.success) {
-        console.log(`✓ Created tarball: dist/dist.tar.gz`);
+        console.log(`✓ Created tarball: dist.deno/dist.tar`);
       } else {
         console.error(
           `✗ Failed to create tarball: ${new TextDecoder().decode(result.stderr)}`,

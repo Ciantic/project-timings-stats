@@ -90,17 +90,8 @@ function main() {
           createContext: () => ({}),
         });
       }
-      // Server index.html from root
-      // if (url.pathname === "/") {
-      //   return new Response(html, { headers: { "content-type": "text/html" } });
-      // }
 
       return serveFileFromTarball(url.pathname);
-
-      // return serveDir(req, {
-      //   fsRoot: "./dist/",
-      //   urlRoot: "",
-      // });
     },
   );
 
