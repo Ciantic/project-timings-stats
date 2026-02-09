@@ -1,10 +1,11 @@
-import { Router } from "@solidjs/router";
-import { FileRoutes } from "@solidjs/start/router";
+import { HashRouter, Route } from "@solidjs/router";
 import { createSignal, onMount, Show, Suspense } from "solid-js";
 import Nav from "./components/Nav.tsx";
 import "./app.css";
 import { isServer } from "solid-js/web";
-import { keepAlive } from "./server/api.ts";
+import { api } from "./client.ts";
+import StatsPage from "./routes/stats.tsx";
+import HomePage from "./routes/index.tsx";
 
 export default function App() {
   const [alive, setAlive] = createSignal(true);
@@ -13,7 +14,7 @@ export default function App() {
     if (!isServer) {
       setInterval(async () => {
         try {
-          await keepAlive();
+          await api.keepAlive.mutate();
         } catch (error) {
           setAlive(false);
           console.error("Error keeping server alive:", error);
@@ -27,7 +28,7 @@ export default function App() {
   };
 
   return (
-    <Router
+    <HashRouter
       root={(props) => (
         <>
           <div
@@ -64,7 +65,8 @@ export default function App() {
         </>
       )}
     >
-      <FileRoutes />
-    </Router>
+      <Route path="/" component={HomePage} />
+      <Route path="/stats" component={StatsPage} />
+    </HashRouter>
   );
 }

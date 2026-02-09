@@ -1,32 +1,57 @@
 {
-  "imports": {
-    "@std/assert": "jsr:@std/assert@^1"
-  },
   "permissions": {
     "default": {
-      "read": [
-        "./_data",
-        "./.output",
-        "/tmp/timings-stats-keep-alive",
-        "/home/jarppa/.config/timings/timings.db"
-      ],
-      "write": [
-        "./_data",
-        "./.output",
-        "/tmp/timings-stats-keep-alive",
-        "/home/jarppa/.config/timings/timings.db"
-      ],
-      "env": [
-        "NITRO_*",
-        "_NITRO*",
-        "_APP",
-        "_APP*",
-        "PORT",
-        "HOST",
-        "TIMINGS_DB",
-        "DENO_TRACE_PERMISSIONS"
-      ],
-      "net": true
+      "read": ["./_data/timings.db", "./timings.db"],
+      "write": ["./_data/timings.db", "./timings.db"],
+      "env": ["NODE_ENV", "PORT", "HOST", "TIMINGS_DB"],
+      "net": true,
+      "run": {
+        "allow": ["google-chrome-stable"]
+      }
+    },
+    "prod": {
+      "env": ["NODE_ENV", "PORT", "HOST"],
+      "net": true,
+      "run": {
+        "allow": ["google-chrome-stable"]
+      }
     }
-  }
+  },
+  "compilerOptions": {
+    "lib": ["deno.window", "deno.unstable", "node", "dom"],
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js"
+  },
+  "tasks": {
+    "dev": "google-chrome-stable --new-window --app=http://127.0.0.1:5173/#/stats && vite dev",
+    "build": "vite build && deno bundle --unstable-raw-imports --output ./dist.deno/timings-stats.mjs ./deno/server.ts",
+    "preview": "deno run -P --watch-hmr --unstable-raw-imports ./dist.deno/timings-stats.mjs",
+    "compile": "deno compile -P=prod --allow-read=timings.db --allow-write=timings.db --output ./dist.deno/timings-stats ./dist.deno/timings-stats.mjs",
+    "deploy": "deno task build && deno task compile && cp ./dist.deno/timings-stats ~/.config/timings/timings-stats",
+    "check": "deno check --unstable-raw-imports"
+  },
+  "imports": {
+    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.1.18",
+    "@trpc/client": "npm:@trpc/client@^11",
+    "@trpc/server": "npm:@trpc/server@^11",
+    "daisyui": "npm:daisyui@^5.5.18",
+    "devalue": "npm:devalue@^5.6.2",
+    "solid-js": "npm:solid-js@^1.9.11",
+    "@solidjs/router": "npm:@solidjs/router@^0.15.0",
+    "date-fns": "npm:date-fns@^4.1.0",
+    "kysely": "npm:kysely@^0.28.11",
+    "kysely-generic-sqlite": "npm:kysely-generic-sqlite@^1.2.1",
+    "tailwindcss": "npm:tailwindcss@^4.1.18",
+    "zod": "npm:zod@4",
+
+    "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.5",
+    "vite": "npm:vite@^7.3.1",
+    "vite-plugin-solid": "npm:vite-plugin-solid@^2.11.10",
+
+    "@std/assert": "jsr:@std/assert@1",
+    "@std/tar": "jsr:@std/tar@0.1",
+    "@std/streams": "jsr:@std/streams@^1.0.17",
+    "@std/media-types": "jsr:@std/media-types@1"
+  },
+  "nodeModulesDir": "auto"
 }

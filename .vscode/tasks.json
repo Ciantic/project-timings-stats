@@ -11,13 +11,9 @@
     },
     {
       "label": "dev",
-      "type": "shell",
-      "command": "./start-dev.sh"
-    },
-    {
-      "label": "start",
-      "type": "shell",
-      "command": "./start.sh"
+      "type": "deno",
+      "command": "task",
+      "args": ["dev"]
     }
   ]
 }

@@ -1,9 +1,9 @@
 import { For, createSignal, createMemo } from "solid-js";
-import { getDailySummariesWithTotals, keepAlive, updateSummary } from "../server/api.ts";
-import { createUrlSignal } from "../utils/createUrlSignal.ts";
-import { parseDateRange } from "../utils/formatDate.ts";
-import { createDebouncedAsync } from "../utils/createDebouncedAsync.ts";
-import { debounce } from "../utils/debounce.ts";
+import { api } from "../client.ts";
+import { createUrlSignal } from "../../utils/createUrlSignal.ts";
+import { parseDateRange } from "../../utils/formatDate.ts";
+import { createDebouncedAsync } from "../../utils/createDebouncedAsync.ts";
+import { debounce } from "../../utils/debounce.ts";
 
 import "./StatsTable.css";
 
@@ -20,7 +20,7 @@ function makeId(row: TableRow) {
   return `${row.day}-${row.project}-${row.client}`;
 }
 
-const updateSummaryDebounced = debounce(updateSummary, 150);
+const updateSummaryDebounced = debounce(api.updateSummary.mutate, 150);
 
 export default function StatsTable() {
   const [dayFilter, setDayFilter] = createUrlSignal("1 months", "day");
@@ -35,7 +35,7 @@ export default function StatsTable() {
 
   const [getData] = createDebouncedAsync(
     [],
-    getDailySummariesWithTotals,
+    api.getDailySummariesWithTotals.query,
     () => ({
       ...parsedDateRange(),
       client: clientFilter(),

@@ -1,11 +1,7 @@
 _data
 dist
-.wrangler
-.output
-.vercel
-.netlify
-.vinxi
-app.config.timestamp_*.js
+dist.deno
+.vite
 
 # Environment
 .env

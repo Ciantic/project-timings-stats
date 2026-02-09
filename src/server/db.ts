@@ -56,7 +56,22 @@ export interface Database {
   dailyTotals: DailyTotalsView;
 }
 
-const TIMINGS_DB = Deno.env.get("TIMINGS_DB") || "./_data/timings.db";
+const TIMINGS_DB = ["timings.db", "./_data/timings.db"].find((path) => {
+  try {
+    Deno.statSync(path);
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+if (!TIMINGS_DB) {
+  throw new Error(
+    "No database file found. Please create a timings.db file in the _data directory or the project root.",
+  );
+} else {
+  console.log(`Using database file: ${TIMINGS_DB}`);
+}
 
 // Create and export the database instance
 export const db = new Kysely<Database>({
