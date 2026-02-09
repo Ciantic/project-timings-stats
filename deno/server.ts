@@ -6,8 +6,9 @@ import { contentType } from "@std/media-types";
 
 // If this gives, error, you should first run `deno task build` to create the tarball
 import DATA from "../dist.deno/dist.tar" with { type: "bytes" };
-const PORT = 3010;
+const PORT = 3856;
 const HOST = "localhost";
+const INACTIVITY_TIMEOUT = 15000; // 15 seconds
 
 async function serveFileFromTarball(path: string): Promise<Response> {
   const buffer = new Buffer(DATA);
@@ -44,13 +45,12 @@ function main() {
 
   // Start Chrome in app mode
   new Deno.Command("google-chrome-stable", {
-    args: ["--new-window", `--app=http://${HOST}:${PORT}/`],
+    args: ["--new-window", `--app=http://${HOST}:${PORT}/#/stats`],
     stdout: "inherit",
     stderr: "inherit",
   }).outputSync();
 
   // Auto-shutdown the server if no requests are received for a certain period of time
-  const INACTIVITY_TIMEOUT = 15000; // 15 seconds
   let LAST_REQUEST = Date.now();
   const checkInterval = setInterval(() => {
     try {
