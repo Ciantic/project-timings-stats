@@ -1,7 +1,7 @@
 import { For, createSignal, createMemo } from "solid-js";
 import { api } from "../client.ts";
 import { createUrlSignal } from "../../utils/createUrlSignal.ts";
-import { parseDateRange } from "../../utils/formatDate.ts";
+import { formatDateTsv, parseDateRange } from "../../utils/formatDate.ts";
 import { createDebouncedAsync } from "../../utils/createDebouncedAsync.ts";
 import { debounce } from "../../utils/debounce.ts";
 
@@ -31,6 +31,7 @@ export default function StatsTable() {
     "x>0.01",
     "hoursFilter",
   );
+  const [toggleColumns, setToggleColumns] = createSignal(false);
   const parsedDateRange = createMemo(() => parseDateRange(dayFilter()));
 
   const [getData] = createDebouncedAsync(
@@ -139,10 +140,12 @@ export default function StatsTable() {
   };
 
   return (
-    <table class="table table-sm my-stats-table">
+    <table
+      class={`table table-sm my-stats-table ${toggleColumns() ? "hide-extra-columns" : ""}`}
+    >
       <thead>
         <tr>
-          <th class="w-[40px]">
+          <th class="w-[40px] col-checkbox">
             <input
               type="checkbox"
               ref={(el) => {
@@ -158,7 +161,7 @@ export default function StatsTable() {
               class="checkbox checkbox-primary checkbox-sm"
             />
           </th>
-          <th class="w-[100px]">
+          <th class="w-[100px] col-day">
             <input
               type="text"
               value={dayFilter()}
@@ -169,7 +172,7 @@ export default function StatsTable() {
               placeholder="Days"
             />
           </th>
-          <th class="w-[20%]">
+          <th class="w-[20%] col-client">
             <input
               type="text"
               value={clientFilter()}
@@ -180,7 +183,7 @@ export default function StatsTable() {
               placeholder="Client"
             />
           </th>
-          <th class="w-[20%]">
+          <th class="w-[20%] col-project">
             <input
               type="text"
               value={projectFilter()}
@@ -191,7 +194,7 @@ export default function StatsTable() {
               placeholder="Project"
             />
           </th>
-          <th class="w-[80px]">
+          <th class="w-[80px] col-hours">
             <input
               type="text"
               value={hoursFilter()}
@@ -202,7 +205,7 @@ export default function StatsTable() {
               placeholder="Hours"
             />
           </th>
-          <th class="w-[80px]">
+          <th class="w-[80px] col-fx">
             <input
               type="text"
               value={fxExpr()}
@@ -213,14 +216,14 @@ export default function StatsTable() {
               placeholder="Σ"
             />
           </th>
-          <th>Summary</th>
+          <th class="col-summary">Summary</th>
         </tr>
       </thead>
       <tbody>
         <For each={dataProcessed().rows}>
           {(row) => (
             <tr class="hover">
-              <td>
+              <td class="col-checkbox">
                 <input
                   type="checkbox"
                   checked={selectedRows().has(makeId(row))}
@@ -228,12 +231,14 @@ export default function StatsTable() {
                   class="checkbox checkbox-primary checkbox-sm"
                 />
               </td>
-              <td>{row.day}</td>
-              <td>{row.client}</td>
-              <td>{row.project}</td>
-              <td>{row.total.toFixed(2)}</td>
-              <td>{typeof row.fx === "number" ? row.fx.toFixed(2) : row.fx}</td>
-              <td>
+              <td class="col-day">{row.day}</td>
+              <td class="col-client">{row.client}</td>
+              <td class="col-project">{row.project}</td>
+              <td class="col-hours">{row.total.toFixed(2)}</td>
+              <td class="col-fx">
+                {typeof row.fx === "number" ? row.fx.toFixed(2) : row.fx}
+              </td>
+              <td class="col-summary">
                 <input
                   type="text"
                   value={row.summary}
@@ -258,10 +263,57 @@ export default function StatsTable() {
       </tbody>
       <tfoot>
         <tr>
-          <td colSpan={4}></td>
-          <td class="">{dataProcessed().totalHours.toFixed(2)}</td>
-          <td class="">{dataProcessed().totalFx.toFixed(2)}</td>
-          <td></td>
+          <td colSpan={4}>
+            <button
+              class="btn btn-sm btn-outline"
+              type="button"
+              onClick={() => {
+                // Data is selected (if something is selected, otherwise all), then converted to TSV and copied to clipboard
+                const selection = selectedRows();
+                const selectedData = dataProcessed().rows.filter((row) => {
+                  if (selection.size === 0) {
+                    return true; // No selection means select all
+                  }
+                  return selection.has(makeId(row));
+                });
+                const tsv = [
+                  ["Day", "Client", "Project", "Hours total", "Summary"].join(
+                    "\t",
+                  ),
+                  ...selectedData.map((row) =>
+                    [
+                      formatDateTsv(new Date(row.day + "T00:00:00")),
+                      row.client,
+                      row.project,
+                      row.fx,
+                      row.summary,
+                    ]
+                      .map((cell) => cell.toString().replace(/\t/g, " "))
+                      .join("\t"),
+                  ),
+                ].join("\n");
+
+                navigator.clipboard.writeText(tsv);
+                // navigator.clipboard.writeText(
+                //   JSON.stringify(dataProcessed().rows),
+                // )
+              }}
+            >
+              Copy as TSV
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline ml-2"
+              onClick={() => {
+                setToggleColumns(!toggleColumns());
+              }}
+            >
+              Toggle columns
+            </button>
+          </td>
+          <td class="col-hours">{dataProcessed().totalHours.toFixed(2)}</td>
+          <td class="col-fx">{dataProcessed().totalFx.toFixed(2)}</td>
+          <td class="col-summary"></td>
         </tr>
       </tfoot>
     </table>

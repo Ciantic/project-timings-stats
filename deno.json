@@ -3,14 +3,14 @@
     "default": {
       "read": ["./_data/timings.db", "./timings.db"],
       "write": ["./_data/timings.db", "./timings.db"],
-      "env": ["NODE_ENV", "PORT", "HOST", "TIMINGS_DB"],
+      "env": ["NODE_ENV", "PORT", "HOST", "TIMINGS_DB", "LD_LIBRARY_PATH"],
       "net": true,
       "run": {
         "allow": ["google-chrome-stable"]
       }
     },
     "prod": {
-      "env": ["NODE_ENV", "PORT", "HOST"],
+      "env": ["NODE_ENV", "PORT", "HOST", "LD_LIBRARY_PATH"],
       "net": true,
       "run": {
         "allow": ["google-chrome-stable"]

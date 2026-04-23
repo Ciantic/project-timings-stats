@@ -1,3 +1,4 @@
+import { formatDateIso } from "../utils/formatDate.ts";
 import { db } from "./db.ts";
 
 export async function getDailySummariesWithTotals(input: {
@@ -6,15 +7,15 @@ export async function getDailySummariesWithTotals(input: {
   client?: string;
   project?: string;
 }) {
-  const from = input?.from?.toISOString().substring(0, 10);
-  let to = input?.to?.toISOString().substring(0, 10);
+  const from = input.from ? formatDateIso(input.from) : undefined;
+  let to = input.to ? formatDateIso(input.to) : undefined;
 
   if (!from) {
-    return [];
+    throw new Error("From date is required");
   }
 
   if (!to) {
-    to = from;
+    to = formatDateIso(new Date());
   }
 
   let summariesQuery = db

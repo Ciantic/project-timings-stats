@@ -41,6 +41,7 @@ async function serveFileFromTarball(path: string): Promise<Response> {
 }
 
 function main() {
+  Deno.env.delete("LD_LIBRARY_PATH");
   console.log(`Starting server at http://${HOST}:${PORT}/`);
 
   // Start Chrome in app mode

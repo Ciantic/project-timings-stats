@@ -20,6 +20,14 @@ export function formatDateTsv(date: Date) {
     return format(date, "d.M.yyyy");
 }
 
+export function formatDatetimeIso(date: Date) {
+    return format(date, "yyyy-MM-dd HH:mm:ss");
+}
+
+export function formatDateIso(date: Date) {
+    return format(date, "yyyy-MM-dd");
+}
+
 export function formatDecimal(value: number) {
     return value.toFixed(2).replace(".", ",");
 }
